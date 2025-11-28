@@ -1,0 +1,25 @@
+# Terraform
+infra/terraform/.terraform/
+infra/terraform/.terraform.lock.hcl
+infra/terraform/terraform.tfstate*
+infra/terraform/terraform.tfvars
+infra/terraform/tfplan
+
+# Ansible
+infra/ansible/inventory.ini
+infra/ansible/*.retry
+
+# Docker
+.env.local
+letsencrypt/
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

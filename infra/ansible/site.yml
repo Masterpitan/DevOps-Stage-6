@@ -1,0 +1,11 @@
+---
+- name: Deploy Microservices Application
+  hosts: servers
+  become: yes
+  vars:
+    app_repo: "https://github.com/YOUR_USERNAME/DevOps-Stage-6.git"
+    app_dir: "/opt/microservices-app"
+  
+  roles:
+    - dependencies
+    - deploy

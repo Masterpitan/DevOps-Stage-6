@@ -1,0 +1,39 @@
+---
+- name: Clone or update application repository
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dir }}"
+    force: yes
+  register: git_result
+
+- name: Create .env file
+  template:
+    src: .env.j2
+    dest: "{{ app_dir }}/.env"
+  register: env_result
+
+- name: Build Java application
+  shell: |
+    cd {{ app_dir }}/users-api
+    ./mvnw clean package -DskipTests
+  when: git_result.changed or env_result.changed
+
+- name: Stop existing containers
+  shell: |
+    cd {{ app_dir }}
+    docker-compose down
+  ignore_errors: yes
+  when: git_result.changed or env_result.changed
+
+- name: Start application with Docker Compose
+  shell: |
+    cd {{ app_dir }}
+    docker-compose up -d --build
+  when: git_result.changed or env_result.changed
+
+- name: Wait for services to be ready
+  wait_for:
+    port: 80
+    host: localhost
+    delay: 30
+    timeout: 300

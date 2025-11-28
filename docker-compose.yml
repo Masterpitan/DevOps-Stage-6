@@ -1,0 +1,124 @@
+# version: '3.8'
+
+services:
+  traefik:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
+      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
+      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:-admin@example.com}"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--global.sendanonymoususage=false"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./letsencrypt:/letsencrypt
+    networks:
+      - app-network
+
+  frontend:
+    build: ./frontend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.routers.frontend-secure.rule=Host(`${DOMAIN:-localhost}`)"
+      - "traefik.http.routers.frontend-secure.entrypoints=websecure"
+      - "traefik.http.routers.frontend-secure.tls.certresolver=myresolver"
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
+      - "traefik.http.routers.frontend.middlewares=redirect-to-https"
+    networks:
+      - app-network
+    depends_on:
+      - auth-api
+      - todos-api
+
+  auth-api:
+    build: ./auth-api
+    ports:
+      - "8081:8081"
+    environment:
+      - AUTH_API_PORT=8081
+      - JWT_SECRET=${JWT_SECRET:-myfancysecret}
+      - USERS_API_ADDRESS=http://users-api:8083
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.auth-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth-api.entrypoints=web"
+      - "traefik.http.routers.auth-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/auth`)"
+      - "traefik.http.routers.auth-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.auth-api-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.auth-api.middlewares=redirect-to-https"
+    networks:
+      - app-network
+
+  todos-api:
+    build: ./todos-api
+    ports:
+      - "8082:8082"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-myfancysecret}
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.todos-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos-api.entrypoints=web"
+      - "traefik.http.routers.todos-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/todos`)"
+      - "traefik.http.routers.todos-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.todos-api-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.todos-api.middlewares=redirect-to-https"
+    networks:
+      - app-network
+    depends_on:
+      - redis-queue
+
+  users-api:
+    build: ./users-api
+    ports:
+      - "8083:8083"
+    environment:
+      - SERVER_PORT=8083
+      - JWT_SECRET=${JWT_SECRET:-myfancysecret}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.users-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users-api.entrypoints=web"
+      - "traefik.http.routers.users-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/users`)"
+      - "traefik.http.routers.users-api-secure.entrypoints=websecure"
+      - "traefik.http.routers.users-api-secure.tls.certresolver=myresolver"
+      - "traefik.http.routers.users-api.middlewares=redirect-to-https"
+    networks:
+      - app-network
+
+  log-message-processor:
+    build: ./log-message-processor
+    environment:
+      - REDIS_HOST=redis-queue
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=log_channel
+    networks:
+      - app-network
+    depends_on:
+      - redis-queue
+
+  redis-queue:
+    image: redis:7-alpine
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  letsencrypt:
