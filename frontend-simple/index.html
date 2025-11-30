@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HNG13 DevOps Stage 6 - TODO App</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .login-page {
+            min-height: 100vh;
+            background: #f8f9fa;
+            padding: 20px;
+            position: relative;
+        }
+        .hng-brand {
+            position: fixed;
+            top: 20px;
+            right: 30px;
+            color: #0056b3;
+            font-weight: bold;
+            font-size: 24px;
+            z-index: 1000;
+        }
+        .login-form {
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+        .custom-hr {
+            border: 2px solid #0056b3;
+            width: 50%;
+            margin: 15px auto;
+        }
+        .input-group-text {
+            background-color: #0056b3;
+            color: #fff;
+            border: none;
+        }
+        .btn-primary {
+            background-color: #0056b3;
+            border-color: #0056b3;
+        }
+        .btn-primary:hover {
+            background-color: #003f7f;
+            border-color: #003f7f;
+        }
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 2s linear infinite;
+            margin: 0 auto 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .todo-item {
+            background: #fff;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+    <div class="hng-brand">HNG.TECH</div>
+    
+    <!-- Login Page -->
+    <div id="loginPage" class="login-page">
+        <div class="container">
+            <div id="spinner" class="text-center hidden">
+                <div class="spinner"></div>
+                <p>Logging in...</p>
+            </div>
+            
+            <form class="form-horizontal login-form" onsubmit="doLogin(event)">
+                <div class="row text-center">
+                    <div class="col-md-12">
+                        <h2>Welcome to HNG13 DevOps Stage 6 Task</h2>
+                        <hr class="custom-hr" />
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa fa-user"></i></span>
+                                <input type="text" id="username" class="form-control" placeholder="Enter your username" required autofocus>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa fa-lock"></i></span>
+                                <input type="password" id="password" class="form-control" placeholder="Enter your password" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-danger text-center">
+                        <small id="errorMessage"></small>
+                    </div>
+                </div>
+                <div class="row justify-content-center">
+                    <div class="col-md-6 text-center">
+                        <button type="submit" class="btn btn-primary btn-block w-100">
+                            <i class="fa fa-sign-in"></i> Login
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- TODO Page -->
+    <div id="todoPage" class="hidden">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container">
+                <span class="navbar-brand">TODO App</span>
+                <button class="btn btn-outline-light" onclick="logout()">
+                    <i class="fa fa-sign-out"></i> Logout
+                </button>
+            </div>
+        </nav>
+        
+        <div class="container mt-4">
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <h3>My TODOs</h3>
+                    
+                    <div class="input-group mb-3">
+                        <input type="text" id="newTodo" class="form-control" placeholder="Add a new todo...">
+                        <button class="btn btn-primary" onclick="addTodo()">
+                            <i class="fa fa-plus"></i> Add
+                        </button>
+                    </div>
+                    
+                    <div id="todoList">
+                        <!-- TODOs will be loaded here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let authToken = null;
+        
+        // Login credentials (from .env file)
+        const validCredentials = {
+            'admin': 'Admin123',
+            'hng': 'HngTech',
+            'user': 'Password'
+        };
+
+        function doLogin(event) {
+            event.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const spinner = document.getElementById('spinner');
+            const errorMessage = document.getElementById('errorMessage');
+            
+            spinner.classList.remove('hidden');
+            errorMessage.textContent = '';
+            
+            // Simulate API call
+            setTimeout(() => {
+                if (validCredentials[username] === password) {
+                    authToken = 'mock-jwt-token-' + Date.now();
+                    showTodoPage();
+                } else {
+                    errorMessage.textContent = 'Invalid username or password';
+                }
+                spinner.classList.add('hidden');
+            }, 1000);
+        }
+        
+        function showTodoPage() {
+            document.getElementById('loginPage').classList.add('hidden');
+            document.getElementById('todoPage').classList.remove('hidden');
+            loadTodos();
+        }
+        
+        function logout() {
+            authToken = null;
+            document.getElementById('todoPage').classList.add('hidden');
+            document.getElementById('loginPage').classList.remove('hidden');
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('errorMessage').textContent = '';
+        }
+        
+        let todos = [
+            { id: 1, text: 'Learn Docker', completed: false },
+            { id: 2, text: 'Deploy to AWS', completed: false },
+            { id: 3, text: 'Setup CI/CD', completed: true }
+        ];
+        
+        function loadTodos() {
+            const todoList = document.getElementById('todoList');
+            todoList.innerHTML = '';
+            
+            todos.forEach(todo => {
+                const todoDiv = document.createElement('div');
+                todoDiv.className = 'todo-item d-flex justify-content-between align-items-center';
+                todoDiv.innerHTML = `
+                    <div>
+                        <input type="checkbox" ${todo.completed ? 'checked' : ''} 
+                               onchange="toggleTodo(${todo.id})" class="me-2">
+                        <span class="${todo.completed ? 'text-decoration-line-through text-muted' : ''}">${todo.text}</span>
+                    </div>
+                    <button class="btn btn-sm btn-danger" onclick="deleteTodo(${todo.id})">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+                todoList.appendChild(todoDiv);
+            });
+        }
+        
+        function addTodo() {
+            const newTodoInput = document.getElementById('newTodo');
+            const text = newTodoInput.value.trim();
+            
+            if (text) {
+                const newTodo = {
+                    id: Date.now(),
+                    text: text,
+                    completed: false
+                };
+                todos.push(newTodo);
+                newTodoInput.value = '';
+                loadTodos();
+            }
+        }
+        
+        function toggleTodo(id) {
+            const todo = todos.find(t => t.id === id);
+            if (todo) {
+                todo.completed = !todo.completed;
+                loadTodos();
+            }
+        }
+        
+        function deleteTodo(id) {
+            todos = todos.filter(t => t.id !== id);
+            loadTodos();
+        }
+        
+        // Allow Enter key to add todo
+        document.getElementById('newTodo').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+    </script>
+</body>
+</html>

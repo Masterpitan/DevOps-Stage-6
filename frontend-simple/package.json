@@ -1,0 +1,9 @@
+{
+  "name": "frontend-simple",
+  "version": "1.0.0",
+  "description": "Simple TODO app frontend",
+  "scripts": {
+    "build": "echo 'Build complete' && exit 0"
+  },
+  "dependencies": {}
+}

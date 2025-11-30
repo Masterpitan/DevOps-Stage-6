@@ -7,9 +7,9 @@ terraform {
     }
   }
   backend "s3" {
-    bucket = "your-terraform-state-bucket"
+    bucket = "hng-state"
     key    = "microservices-app/terraform.tfstate"
-    region = "us-east-1"
+    region = "us-west-2"
   }
 }
 
@@ -24,12 +24,17 @@ data "aws_ami" "ubuntu" {
 
   filter {
     name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-22.04-amd64-server-*"]
+    values = ["ubuntu/images/hvm-ssd/ubuntu-*-amd64-server-*"]
   }
 
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+
+  filter {
+    name   = "state"
+    values = ["available"]
   }
 }
 
@@ -71,17 +76,11 @@ resource "aws_security_group" "app_sg" {
   }
 }
 
-# Key Pair
-resource "aws_key_pair" "app_key" {
-  key_name   = "microservices-app-key"
-  public_key = var.public_key
-}
-
 # EC2 Instance
 resource "aws_instance" "app_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = var.instance_type
-  key_name               = aws_key_pair.app_key.key_name
+  key_name               = var.key_pair_name
   vpc_security_group_ids = [aws_security_group.app_sg.id]
 
   user_data = base64encode(templatefile("${path.module}/user_data.sh", {
@@ -111,6 +110,7 @@ resource "null_resource" "run_ansible" {
   }
 
   provisioner "local-exec" {
-    command = "sleep 60 && cd ${path.module}/../ansible && ansible-playbook -i inventory.ini site.yml"
+    command = "Start-Sleep 60; Set-Location '${path.module}/../ansible'; ansible-playbook -i inventory.ini site.yml"
+    interpreter = ["powershell", "-Command"]
   }
 }

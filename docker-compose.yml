@@ -25,16 +25,12 @@ services:
       - app-network
 
   frontend:
-    build: ./frontend
+    build: ./frontend-simple
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
       - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.routers.frontend-secure.rule=Host(`${DOMAIN:-localhost}`)"
-      - "traefik.http.routers.frontend-secure.entrypoints=websecure"
-      - "traefik.http.routers.frontend-secure.tls.certresolver=myresolver"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.routers.frontend.middlewares=redirect-to-https"
+      - "traefik.http.services.frontend.loadbalancer.server.port=80"
     networks:
       - app-network
     depends_on:
@@ -53,10 +49,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.auth-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/auth`)"
       - "traefik.http.routers.auth-api.entrypoints=web"
-      - "traefik.http.routers.auth-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.auth-api-secure.entrypoints=websecure"
-      - "traefik.http.routers.auth-api-secure.tls.certresolver=myresolver"
-      - "traefik.http.routers.auth-api.middlewares=redirect-to-https"
     networks:
       - app-network
 
@@ -73,10 +65,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.todos-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/todos`)"
       - "traefik.http.routers.todos-api.entrypoints=web"
-      - "traefik.http.routers.todos-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/todos`)"
-      - "traefik.http.routers.todos-api-secure.entrypoints=websecure"
-      - "traefik.http.routers.todos-api-secure.tls.certresolver=myresolver"
-      - "traefik.http.routers.todos-api.middlewares=redirect-to-https"
     networks:
       - app-network
     depends_on:
@@ -93,10 +81,6 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.users-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/users`)"
       - "traefik.http.routers.users-api.entrypoints=web"
-      - "traefik.http.routers.users-api-secure.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/users`)"
-      - "traefik.http.routers.users-api-secure.entrypoints=websecure"
-      - "traefik.http.routers.users-api-secure.tls.certresolver=myresolver"
-      - "traefik.http.routers.users-api.middlewares=redirect-to-https"
     networks:
       - app-network
 

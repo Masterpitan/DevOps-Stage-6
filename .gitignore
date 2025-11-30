@@ -4,18 +4,29 @@ infra/terraform/.terraform.lock.hcl
 infra/terraform/terraform.tfstate*
 infra/terraform/terraform.tfvars
 infra/terraform/tfplan
+infra/terraform/crash.log
 
 # Ansible
 infra/ansible/inventory.ini
 infra/ansible/*.retry
 
 # Docker
+.env
 .env.local
 letsencrypt/
+
+# Build artifacts
+node_modules/
+target/
+build/
+dist/
+vendor/
 
 # IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
@@ -23,3 +34,8 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Secrets
+*.pem
+*.key
+*.crt

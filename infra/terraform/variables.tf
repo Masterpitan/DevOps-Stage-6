@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-east-1"
+  default     = "us-west-2"
 }
 
 variable "instance_type" {
@@ -10,9 +10,10 @@ variable "instance_type" {
   default     = "t3.medium"
 }
 
-variable "public_key" {
-  description = "Public key for SSH access"
+variable "key_pair_name" {
+  description = "Name of existing AWS key pair"
   type        = string
+  default     = "web-key"
 }
 
 variable "domain" {
