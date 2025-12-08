@@ -1,7 +1,7 @@
 variable "aws_region" {
   description = "AWS region"
   type        = string
-  default     = "us-west-2"
+  default     = "us-east-1"
 }
 
 variable "instance_type" {
@@ -13,7 +13,7 @@ variable "instance_type" {
 variable "key_pair_name" {
   description = "Name of existing AWS key pair"
   type        = string
-  default     = "web-key"
+  default     = "devops6"
 }
 
 variable "domain" {

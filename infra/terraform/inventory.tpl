@@ -1,5 +1,5 @@
 [servers]
-app-server ansible_host=${server_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/id_rsa
+app-server ansible_host=${server_ip} ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/devops6.pem
 
 [servers:vars]
 domain=${domain}
