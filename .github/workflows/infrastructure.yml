@@ -36,13 +36,13 @@ jobs:
     - name: Terraform Init
       run: |
         cd infra/terraform
-        terraform init
+        terraform init -input=false
 
     - name: Terraform Plan
       id: plan
       run: |
         cd infra/terraform
-        terraform plan -detailed-exitcode -out=tfplan
+        terraform plan -detailed-exitcode -out=tfplan -input=false
         echo "has-changes=$?" >> $GITHUB_OUTPUT
       continue-on-error: true
 
@@ -101,7 +101,7 @@ jobs:
     - name: Terraform Init
       run: |
         cd infra/terraform
-        terraform init
+        terraform init -input=false
 
     - name: Setup SSH key
       run: |
@@ -113,7 +113,7 @@ jobs:
     - name: Terraform Apply
       run: |
         cd infra/terraform
-        terraform apply -auto-approve
+        terraform apply -auto-approve -input=false
 
     - name: Setup Ansible
       run: |
