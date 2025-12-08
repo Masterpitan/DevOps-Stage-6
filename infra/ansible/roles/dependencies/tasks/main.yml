@@ -51,8 +51,3 @@
     name: docker-compose
     state: present
 
-- name: Create letsencrypt directory
-  file:
-    path: /opt/letsencrypt
-    state: directory
-    mode: '0755'

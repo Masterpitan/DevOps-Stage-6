@@ -1,36 +1,23 @@
 # version: '3.8'
 
 services:
-  traefik:
-    image: traefik:v3.2
-    command:
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-      - "--entrypoints.websecure.address=:443"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge=true"
-      - "--certificatesresolvers.myresolver.acme.httpchallenge.entrypoint=web"
-      - "--certificatesresolvers.myresolver.acme.email=${ACME_EMAIL:-akoredeadetunji93@gmail.com}"
-      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
-      - "--global.sendanonymoususage=false"
+  nginx:
+    image: nginx:alpine
     ports:
       - "80:80"
-      - "443:443"
-      - "8080:8080"
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - ./letsencrypt:/letsencrypt
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
       - app-network
+    depends_on:
+      - frontend
+      - auth-api
+      - todos-api
+      - users-api
 
   frontend:
     build: ./frontend-simple
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=Host(`${DOMAIN:-localhost}`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=80"
+
     networks:
       - app-network
     depends_on:
@@ -45,10 +32,7 @@ services:
       - AUTH_API_PORT=8081
       - JWT_SECRET=${JWT_SECRET:-myfancysecret}
       - USERS_API_ADDRESS=http://users-api:8083
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.auth-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/auth`)"
-      - "traefik.http.routers.auth-api.entrypoints=web"
+
     networks:
       - app-network
 
@@ -61,10 +45,7 @@ services:
       - REDIS_HOST=redis-queue
       - REDIS_PORT=6379
       - REDIS_CHANNEL=log_channel
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.todos-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/todos`)"
-      - "traefik.http.routers.todos-api.entrypoints=web"
+
     networks:
       - app-network
     depends_on:
@@ -77,10 +58,7 @@ services:
     environment:
       - SERVER_PORT=8083
       - JWT_SECRET=${JWT_SECRET:-myfancysecret}
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.users-api.rule=Host(`${DOMAIN:-localhost}`) && PathPrefix(`/api/users`)"
-      - "traefik.http.routers.users-api.entrypoints=web"
+
     networks:
       - app-network
 
@@ -104,5 +82,4 @@ networks:
   app-network:
     driver: bridge
 
-volumes:
-  letsencrypt:
+

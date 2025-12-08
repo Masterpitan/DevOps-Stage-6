@@ -27,6 +27,13 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/devops6.pem
+        chmod 600 ~/.ssh/devops6.pem
+        ssh-keyscan -H 54.147.104.208 >> ~/.ssh/known_hosts
+
     - name: Setup Ansible
       run: |
         sudo apt-get update

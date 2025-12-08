@@ -46,27 +46,26 @@ jobs:
         echo "has-changes=$?" >> $GITHUB_OUTPUT
       continue-on-error: true
 
-    - name: Send drift detection email
+    - name: Create drift detection issue
       if: steps.plan.outputs.has-changes == '2'
-      uses: dawidd6/action-send-mail@v3
+      uses: actions/github-script@v6
       with:
-        server_address: smtp.gmail.com
-        server_port: 587
-        username: ${{ secrets.EMAIL_USERNAME }}
-        password: ${{ secrets.EMAIL_PASSWORD }}
-        subject: "🚨 Infrastructure Drift Detected - Manual Approval Required"
-        body: |
-          Infrastructure drift has been detected in the microservices application.
-          
-          Repository: ${{ github.repository }}
-          Branch: ${{ github.ref_name }}
-          Commit: ${{ github.sha }}
-          
-          Please review the changes and approve the deployment if they are expected.
-          
-          View the workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        to: ${{ secrets.NOTIFICATION_EMAIL }}
-        from: DevOps Pipeline <${{ secrets.EMAIL_USERNAME }}>
+        script: |
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: '🚨 Infrastructure Drift Detected - Manual Approval Required',
+            body: `Infrastructure drift has been detected in the microservices application.
+            
+            **Repository:** ${{ github.repository }}
+            **Branch:** ${{ github.ref_name }}
+            **Commit:** ${{ github.sha }}
+            
+            Please review the changes and approve the deployment if they are expected.
+            
+            **View the workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
+            labels: ['infrastructure', 'drift-detection']
+          })
 
   manual-approval:
     needs: terraform-plan
@@ -104,7 +103,26 @@ jobs:
         cd infra/terraform
         terraform init
 
+    - name: Setup SSH key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/devops6.pem
+        chmod 600 ~/.ssh/devops6.pem
+        ssh-keyscan -H 54.147.104.208 >> ~/.ssh/known_hosts
+
     - name: Terraform Apply
       run: |
         cd infra/terraform
         terraform apply -auto-approve
+
+    - name: Setup Ansible
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y ansible
+
+    - name: Deploy with Ansible
+      run: |
+        cd infra/ansible
+        ansible-playbook -i inventory.ini site.yml
+      env:
+        ANSIBLE_HOST_KEY_CHECKING: False

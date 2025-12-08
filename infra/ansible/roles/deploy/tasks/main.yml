@@ -31,9 +31,17 @@
     docker-compose up -d --build
   when: git_result.changed or env_result.changed
 
-- name: Wait for services to be ready
+- name: Wait for nginx to be ready
   wait_for:
     port: 80
     host: localhost
     delay: 30
     timeout: 300
+
+- name: Verify application is accessible
+  uri:
+    url: "http://{{ domain }}"
+    method: GET
+    status_code: 200
+  retries: 5
+  delay: 10
