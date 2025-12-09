@@ -46,11 +46,11 @@ jobs:
         cd infra/terraform
         terraform apply -auto-approve -input=false -var-file=terraform.tfvars
 
-    - name: Get server IP from Terraform output
+    - name: Get server IP from Terraform state
       id: server_ip
       run: |
         cd infra/terraform
-        SERVER_IP=$(terraform output -raw instance_public_ip 2>/dev/null || terraform output instance_public_ip | tr -d '"')
+        SERVER_IP=$(terraform show -json | jq -r '.values.outputs.instance_public_ip.value')
         echo "Server IP: $SERVER_IP"
         echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
 
