@@ -4,12 +4,13 @@ on:
   push:
     paths:
       - 'frontend/**'
+      - 'frontend-simple/**'
       - 'auth-api/**'
       - 'todos-api/**'
       - 'users-api/**'
       - 'log-message-processor/**'
       - 'docker-compose.yml'
-      - '.env'
+      - 'nginx.conf'
   workflow_dispatch:
 
 jobs:
@@ -27,21 +28,39 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
+    - name: Setup Terraform to get server IP
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: 1.5.0
+
+    - name: Get server IP from Terraform
+      id: server_ip
+      run: |
+        cd infra/terraform
+        terraform init -input=false
+        SERVER_IP=$(terraform output -raw instance_public_ip)
+        echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
+
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/devops6.pem
         chmod 600 ~/.ssh/devops6.pem
-        ssh-keyscan -H 54.147.104.208 >> ~/.ssh/known_hosts
+        ssh-keyscan -H ${{ steps.server_ip.outputs.ip }} >> ~/.ssh/known_hosts
+
+    - name: Update Ansible inventory with current IP
+      run: |
+        cd infra/ansible
+        sed -i "s/ansible_host=[0-9.]*/ansible_host=${{ steps.server_ip.outputs.ip }}/" inventory.ini
 
     - name: Setup Ansible
       run: |
         sudo apt-get update
         sudo apt-get install -y ansible
 
-    - name: Deploy application
+    - name: Deploy application only
       run: |
         cd infra/ansible
-        ansible-playbook -i inventory.ini site.yml
+        ansible-playbook -i inventory.ini site.yml --tags deploy
       env:
         ANSIBLE_HOST_KEY_CHECKING: False

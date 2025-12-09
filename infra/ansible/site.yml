@@ -8,5 +8,7 @@
     acme_email: "akoredeadetunji93@gmail.com"
 
   roles:
-    - dependencies
-    - deploy
+    - role: dependencies
+      tags: [infra, dependencies]
+    - role: deploy
+      tags: [deploy, application]
