@@ -50,7 +50,8 @@ jobs:
       id: server_ip
       run: |
         cd infra/terraform
-        SERVER_IP=$(terraform output -raw instance_public_ip)
+        SERVER_IP=$(terraform output -raw instance_public_ip 2>/dev/null || terraform output instance_public_ip | tr -d '"')
+        echo "Server IP: $SERVER_IP"
         echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
 
     - name: Setup SSH key
