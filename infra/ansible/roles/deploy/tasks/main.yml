@@ -16,11 +16,12 @@
     dest: "{{ app_dir }}/.env"
   register: env_result
 
-- name: Build Java application
-  shell: |
-    cd {{ app_dir }}/users-api
-    ./mvnw clean package -DskipTests
-  when: git_result.changed or env_result.changed
+# Skip Java build - using pre-built JAR
+# - name: Build Java application
+#   shell: |
+#     cd {{ app_dir }}/users-api
+#     ./mvnw clean package -DskipTests
+#   when: git_result.changed or env_result.changed
 
 - name: Stop existing containers
   shell: |
