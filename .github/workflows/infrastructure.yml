@@ -46,20 +46,35 @@ jobs:
         cd infra/terraform
         terraform apply -auto-approve -input=false -var-file=terraform.tfvars
 
-    - name: Get server IP from inventory
+    - name: Wait for inventory file and get server IP
       id: server_ip
       run: |
         cd infra/ansible
-        SERVER_IP=$(grep ansible_host inventory.ini | cut -d'=' -f2 | cut -d' ' -f1)
-        echo "Server IP: $SERVER_IP"
-        echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
+        # Wait for inventory file to be created
+        for i in {1..30}; do
+          if [ -f inventory.ini ]; then
+            SERVER_IP=$(grep ansible_host inventory.ini | cut -d'=' -f2 | cut -d' ' -f1)
+            if [ ! -z "$SERVER_IP" ]; then
+              echo "Server IP: $SERVER_IP"
+              echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
+              break
+            fi
+          fi
+          echo "Waiting for inventory file... ($i/30)"
+          sleep 2
+        done
 
     - name: Setup SSH key
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/devops6.pem
         chmod 600 ~/.ssh/devops6.pem
-        ssh-keyscan -H ${{ steps.server_ip.outputs.ip }} >> ~/.ssh/known_hosts
+        if [ ! -z "${{ steps.server_ip.outputs.ip }}" ]; then
+          ssh-keyscan -H ${{ steps.server_ip.outputs.ip }} >> ~/.ssh/known_hosts
+        else
+          echo "Error: No server IP found"
+          exit 1
+        fi
 
     - name: Wait for server to be ready
       run: |
