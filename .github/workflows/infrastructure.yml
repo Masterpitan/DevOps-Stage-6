@@ -46,11 +46,11 @@ jobs:
         cd infra/terraform
         terraform apply -auto-approve -input=false -var-file=terraform.tfvars
 
-    - name: Get server IP from Terraform state
+    - name: Get server IP from inventory
       id: server_ip
       run: |
-        cd infra/terraform
-        SERVER_IP=$(terraform show -json | jq -r '.values.outputs.instance_public_ip.value')
+        cd infra/ansible
+        SERVER_IP=$(grep ansible_host inventory.ini | cut -d'=' -f2 | cut -d' ' -f1)
         echo "Server IP: $SERVER_IP"
         echo "ip=$SERVER_IP" >> $GITHUB_OUTPUT
 
