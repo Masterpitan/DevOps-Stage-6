@@ -12,10 +12,8 @@ env:
   TF_VERSION: 1.5.0
 
 jobs:
-  terraform-plan:
+  deploy:
     runs-on: ubuntu-latest
-    outputs:
-      has-changes: ${{ steps.plan.outputs.has-changes }}
     
     steps:
     - name: Checkout code
@@ -39,69 +37,9 @@ jobs:
         terraform init -input=false
 
     - name: Terraform Plan
-      id: plan
       run: |
         cd infra/terraform
-        terraform plan -detailed-exitcode -out=tfplan -input=false
-        echo "has-changes=$?" >> $GITHUB_OUTPUT
-      continue-on-error: true
-
-    - name: Create drift detection issue
-      if: steps.plan.outputs.has-changes == '2'
-      uses: actions/github-script@v6
-      with:
-        script: |
-          github.rest.issues.create({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            title: '🚨 Infrastructure Drift Detected - Manual Approval Required',
-            body: `Infrastructure drift has been detected in the microservices application.
-            
-            **Repository:** ${{ github.repository }}
-            **Branch:** ${{ github.ref_name }}
-            **Commit:** ${{ github.sha }}
-            
-            Please review the changes and approve the deployment if they are expected.
-            
-            **View the workflow:** ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}`,
-            labels: ['infrastructure', 'drift-detection']
-          })
-
-  manual-approval:
-    needs: terraform-plan
-    if: needs.terraform-plan.outputs.has-changes == '2'
-    runs-on: ubuntu-latest
-    environment: production
-    
-    steps:
-    - name: Manual approval required
-      run: echo "Manual approval required for infrastructure changes"
-
-  terraform-apply:
-    needs: [terraform-plan, manual-approval]
-    if: always() && (needs.terraform-plan.outputs.has-changes == '0' || needs.manual-approval.result == 'success')
-    runs-on: ubuntu-latest
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: ${{ env.TF_VERSION }}
-
-    - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
-
-    - name: Terraform Init
-      run: |
-        cd infra/terraform
-        terraform init -input=false
+        terraform plan -input=false
 
     - name: Setup SSH key
       run: |
