@@ -1,10 +1,14 @@
 ---
+- name: Reset SSH connection
+  meta: reset_connection
+
 - name: Clone or update application repository
   git:
     repo: "{{ app_repo }}"
     dest: "{{ app_dir }}"
     force: yes
   register: git_result
+  become: yes
 
 - name: Create .env file
   template:
