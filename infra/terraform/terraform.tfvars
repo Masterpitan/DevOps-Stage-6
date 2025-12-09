@@ -1,0 +1,5 @@
+aws_region    = "us-east-1"
+instance_type = "t2.medium"
+key_pair_name = "devops6"
+domain        = "adepitan.chickenkiller.com"
+acme_email    = "akoredeadetunji93@gmail.com"
