@@ -1,5 +1,5 @@
 aws_region    = "us-east-1"
-instance_type = "t2.medium"
+instance_type = "t3.medium"
 key_pair_name = "devops6"
 domain        = "adepitan.chickenkiller.com"
 # Note: Update DNS to point to new server IP: 3.236.202.132
